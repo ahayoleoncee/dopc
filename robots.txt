@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://ahayoleoncee.github.io/dopc/sitemap.xml
