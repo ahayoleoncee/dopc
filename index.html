@@ -674,6 +674,75 @@ smart systems Rwanda, AI Rwanda, web development Rwanda
     .revR { opacity: 0; transform: translateX(24px); transition: opacity 0.65s var(--ease), transform 0.65s var(--ease); }
     .rev.vis, .revL.vis, .revR.vis { opacity: 1; transform: none; }
 
+    /* ─── BACK TO TOP BUTTON ─── */
+    #back-to-top {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      z-index: 950;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--black);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.28), 0 0 0 1px rgba(245,168,0,0.18);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(24px) scale(0.85);
+      transition: opacity 0.4s var(--ease), transform 0.4s var(--ease), visibility 0.4s, box-shadow 0.3s var(--ease);
+      overflow: hidden;
+    }
+    #back-to-top.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+    #back-to-top:hover {
+      transform: translateY(-4px) scale(1.05);
+    }
+    #back-to-top:active { transform: translateY(-1px) scale(0.96); }
+
+    /* progress ring */
+    #btt-ring {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+    }
+    #btt-ring circle {
+      fill: none;
+      stroke-width: 2.5;
+    }
+    #btt-ring .ring-track { stroke: rgba(255,255,255,0.08); }
+    #btt-ring .ring-prog  {
+      stroke: var(--gold);
+      stroke-linecap: round;
+      stroke-dasharray: 150.8;
+      stroke-dashoffset: 150.8;
+      transition: stroke-dashoffset 0.08s linear;
+    }
+
+    #back-to-top .material-icons-round {
+      position: relative;
+      z-index: 2;
+      font-size: 22px;
+      color: var(--gold);
+      animation: bttFloat 2.2s ease-in-out infinite;
+    }
+    @keyframes bttFloat {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-3px); }
+    }
+    @keyframes bttPop {
+      0%   { transform: translateY(24px) scale(0.7); opacity: 0; }
+      60%  { transform: translateY(-6px) scale(1.08); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    #back-to-top.show.pop { animation: bttPop 0.55s var(--ease); }
+
     /* ─── MOBILE ─── */
     @media (max-width: 960px) {
       nav { padding: 0 20px; }
@@ -695,6 +764,7 @@ smart systems Rwanda, AI Rwanda, web development Rwanda
       .ps-num { flex-shrink: 0; }
       .mobile-nav { padding: 90px 24px 30px 24px; }
       .mobile-nav a { font-size: 1.1rem; padding: 12px 0; }
+      #back-to-top { right: 18px; bottom: 18px; width: 48px; height: 48px; }
     }
     @media (max-width: 560px) {
       .srv-grid { grid-template-columns: 1fr; }
@@ -882,6 +952,15 @@ smart systems Rwanda, AI Rwanda, web development Rwanda
   <div class="ft-bottom"><span>&copy; 2025 DOPC Rwanda. All rights reserved.</span></div>
 </footer>
 
+<!-- BACK TO TOP -->
+<button id="back-to-top" aria-label="Back to top" title="Back to top">
+  <svg id="btt-ring" viewBox="0 0 54 54">
+    <circle class="ring-track" cx="27" cy="27" r="24"></circle>
+    <circle class="ring-prog" cx="27" cy="27" r="24"></circle>
+  </svg>
+  <span class="material-icons-round">arrow_upward</span>
+</button>
+
 <script>
   // Side scroll
   const ssFill = document.getElementById('ss-fill');
@@ -954,6 +1033,57 @@ smart systems Rwanda, AI Rwanda, web development Rwanda
     });
   }, { threshold: 0.5 });
   counters.forEach(c => cntObs.observe(c));
+
+  // ─── BACK TO TOP BUTTON LOGIC ───
+  const bttBtn = document.getElementById('back-to-top');
+  const bttRing = bttBtn.querySelector('.ring-prog');
+  const RING_LEN = 2 * Math.PI * 24; // circumference for r=24
+  bttRing.style.strokeDasharray = RING_LEN;
+  bttRing.style.strokeDashoffset = RING_LEN;
+
+  let bttVisible = false;
+  function updateBackToTop() {
+    const scrollTop = document.documentElement.scrollTop;
+    const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const progress = docHeight > 0 ? scrollTop / docHeight : 0;
+
+    // Update the progress ring around the button
+    bttRing.style.strokeDashoffset = RING_LEN * (1 - progress);
+
+    if (scrollTop > 420 && !bttVisible) {
+      bttVisible = true;
+      bttBtn.classList.add('show', 'pop');
+      setTimeout(() => bttBtn.classList.remove('pop'), 600);
+    } else if (scrollTop <= 420 && bttVisible) {
+      bttVisible = false;
+      bttBtn.classList.remove('show');
+    }
+  }
+  window.addEventListener('scroll', updateBackToTop, { passive: true });
+  updateBackToTop();
+
+  function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function fastScrollToTop(duration = 600) {
+    const startY = document.documentElement.scrollTop || document.body.scrollTop;
+    if (startY === 0) return;
+    const startTime = performance.now();
+
+    function step(now) {
+      const elapsed = now - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const eased = easeOutQuart(t);
+      window.scrollTo(0, startY * (1 - eased));
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  bttBtn.addEventListener('click', () => {
+    bttBtn.classList.add('pop');
+    setTimeout(() => bttBtn.classList.remove('pop'), 500);
+    fastScrollToTop(550);
+  });
 </script>
 </body>
 </html>
